@@ -32,6 +32,8 @@ for task in data["scheduledTasks"]:
         payload["nextRunTime"] = task["nextRunTime"]
     if task["type"] == "synchronize-cloud-account" and "synchronizeCloudAccountTaskParameters" in task:
         payload["synchronizeCloudAccountTaskParameters"] = task["synchronizeCloudAccountTaskParameters"]
+    if task["type"] == "send-alert-summary" and "sendAlertSummaryTaskParameters" in task:
+        payload["sendAlertSummaryTaskParameters"] = task["sendAlertSummaryTaskParameters"]
     elif task["type"] == "check-for-security-updates" and "checkForSecurityUpdatesTaskParameters" in task:
         computer_group_id = task["checkForSecurityUpdatesTaskParameters"]["computerFilter"].get("computerGroupID")
         if computer_group_id is not None:
