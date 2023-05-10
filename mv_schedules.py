@@ -5,11 +5,12 @@ from pprint import pprint
 #define Deep Security manager hostname with port and API key
 DSM_HOSTNAME = "<YOUR-DSM-HOSTNAME-HERE>"
 DSM_API_KEY = "<YOUR-API-KEY-HERE>"
+PORT = "4119"
 #define Cloud One Workload Security region
 REGION = "<YOUR-CLOUD-ONE-REGION-HERE>"
 C1_API_KEY = "<YOUR-API-KEY-HERE>"
 #set up the Deep Security API and headers
-dsmurl = f"https://{DSM_HOSTNAME}/api/scheduledtasks"
+dsmurl = f"https://{DSM_HOSTNAME}:{PORT}/api/scheduledtasks"
 dsm_headers = {"api-version": "v1", "Content-Type": "application/json", "api-secret-key": DSM_API_KEY}
 
 #setup Cloud One API and headers
@@ -37,7 +38,7 @@ for task in data["scheduledTasks"]:
     elif task["type"] == "check-for-security-updates" and "checkForSecurityUpdatesTaskParameters" in task:
         computer_group_id = task["checkForSecurityUpdatesTaskParameters"]["computerFilter"].get("computerGroupID")
         if computer_group_id is not None:
-            c1_cgep=f"https://{DSM_HOSTNAME}/api/computergroups/{computer_group_id}"
+            c1_cgep=f"https://{DSM_HOSTNAME}:{PORT}/api/computergroups/{computer_group_id}"
             response = requests.get(c1_cgep, headers=dsm_headers)
             cgdata = json.loads(response.content)
             cgname = cgdata['name']
@@ -61,7 +62,7 @@ for task in data["scheduledTasks"]:
     elif task["type"] == "scan-for-recommendations" and "scanForRecommendationsTaskParameters" in task:
         computer_group_id = task["scanForRecommendationsTaskParameters"]["computerFilter"].get("computerGroupID")
         if computer_group_id is not None:
-            c1_cgep=f"https://{DSM_HOSTNAME}/api/computergroups/{computer_group_id}"
+            c1_cgep=f"https://{DSM_HOSTNAME}:{PORT}/api/computergroups/{computer_group_id}"
             response = requests.get(c1_cgep, headers=dsm_headers)
             cgdata = json.loads(response.content)
             cgname = cgdata['name']
@@ -94,7 +95,7 @@ for task in data["scheduledTasks"]:
         computer_group_id = task["scanForMalwareTaskParameters"]["computerFilter"].get("computerGroupID")
         #uses the computer "computerGroupID" from the "scanForMalwareTaskParameters" to get the folder name from Deep Securtiy and then it uses the folder name to query the C1 console and retrieve the new group ID then attach that to the payload to assign the scheduled malware scan to the correct folder with the new group ID
         if computer_group_id is not None:
-            c1_cgep=f"https://{DSM_HOSTNAME}/api/computergroups/{computer_group_id}"
+            c1_cgep=f"https://{DSM_HOSTNAME}:{PORT}/api/computergroups/{computer_group_id}"
             response = requests.get(c1_cgep, headers=dsm_headers)
             cgdata = json.loads(response.content)
             cgname = cgdata['name']
