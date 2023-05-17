@@ -70,7 +70,6 @@ for task in data["scheduledTasks"]:
         computer_group_id = task["scheduledAgentUpgradeTaskParameters"]["computerFilter"].get("computerGroupID")
         payload["scheduledAgentUpgradeTaskParameters"] = get_folder_id(computer_group_id) or task["scheduledAgentUpgradeTaskParameters"]
     elif task["type"] == "send-alert-summary" and "sendAlertSummaryTaskParameters" in task:
-        computer_group_id = task["sendAlertSummaryTaskParameters"]["computerFilter"].get("computerGroupID")
         payload["sendAlertSummaryTaskParameters"] = get_folder_id(computer_group_id) or task["sendAlertSummaryTaskParameters"]
     elif task["type"] == "scan-for-integrity-changes" and "scanForIntegrityChangesTaskParameters" in task:
         computer_group_id = task["scanForIntegrityChangesTaskParameters"]["computerFilter"].get("computerGroupID")
