@@ -3,15 +3,38 @@ import json
 from pprint import pprint
 
 #define Deep Security manager hostname with port and API key
-DSM_HOSTNAME = "<YOUR-DSM-HOSTNAME-HERE>"
-DSM_API_KEY = "<YOUR-API-KEY-HERE>"
-PORT = "4119"
+DSM_HOSTNAME = "<HOSTNAME HERE>
+DSM_API_KEY = "<YOUR_DSM_KEY_HERE"
+
 #define Cloud One Workload Security region
-REGION = "<YOUR-CLOUD-ONE-REGION-HERE>"
-C1_API_KEY = "<YOUR-API-KEY-HERE>"
-#set up the Deep Security API and headers
-dsmurl = f"https://{DSM_HOSTNAME}:{PORT}/api/scheduledtasks"
-dsm_headers = {"api-version": "v1", "Content-Type": "application/json", "api-secret-key": DSM_API_KEY}
+REGION = "<C1_REGION_HERE>"
+C1_API_KEY = "<C1_API_KEY_HERE>"
+
+def get_folder_id(computer_group_id):
+    if computer_group_id is not None:
+        c1_cgep = f"https://{DSM_HOSTNAME}/api/computergroups/{computer_group_id}"
+        response = requests.get(c1_cgep, headers=dsm_headers)
+        cgdata = json.loads(response.content)
+        cgname = cgdata['name']
+        c1_scg = f"https://workload.{REGION}.cloudone.trendmicro.com/api/computergroups"
+        response = requests.get(c1_scg, headers=c1_headers)
+        search_data = json.loads(response.content)
+        folder_id = None
+        for group in search_data["computerGroups"]:
+            if group["name"] == cgname:
+                folder_id = group["ID"]
+                break
+        if folder_id is not None:
+            return {
+                "computerFilter": {
+                    "type": "computers-in-group",
+                    "computerGroupID": folder_id
+                }
+            }
+    return None
+
+dsmurl = f"https://{DSM_HOSTNAME}/api/scheduledtasks"
+dsm_headers = {"api-version": "v1", "Content-Type": "application/json", "Authorization": DSM_API_KEY}
 
 #setup Cloud One API and headers
 c1 = f"https://workload.{REGION}.cloudone.trendmicro.com/api/scheduledtasks"
@@ -32,94 +55,31 @@ for task in data["scheduledTasks"]:
     if "nextRunTime" in task:
         payload["nextRunTime"] = task["nextRunTime"]
     if task["type"] == "synchronize-cloud-account" and "synchronizeCloudAccountTaskParameters" in task:
+        computer_group_id = task["synchronizeCloudAccountTaskParameters"]["computerFilter"].get("computerGroupID")
         payload["synchronizeCloudAccountTaskParameters"] = task["synchronizeCloudAccountTaskParameters"]
-    if task["type"] == "send-alert-summary" and "sendAlertSummaryTaskParameters" in task:
-        payload["sendAlertSummaryTaskParameters"] = task["sendAlertSummaryTaskParameters"]
     elif task["type"] == "check-for-security-updates" and "checkForSecurityUpdatesTaskParameters" in task:
         computer_group_id = task["checkForSecurityUpdatesTaskParameters"]["computerFilter"].get("computerGroupID")
-        if computer_group_id is not None:
-            c1_cgep=f"https://{DSM_HOSTNAME}:{PORT}/api/computergroups/{computer_group_id}"
-            response = requests.get(c1_cgep, headers=dsm_headers)
-            cgdata = json.loads(response.content)
-            cgname = cgdata['name']
-            c1_scg=f"https://workload.{REGION}.cloudone.trendmicro.com/api/computergroups"
-            response = requests.get(c1_scg, headers=c1_headers)
-            search_data = json.loads(response.content)
-            folder_id = None
-            for group in search_data["computerGroups"]:
-                if group["name"] == cgname:
-                    folder_id = group["ID"]
-                    break
-            if folder_id is not None:
-                payload["checkForSecurityUpdatesTaskParameters"] = {
-                    "computerFilter": {
-                        "type": "computers-in-group",
-                        "computerGroupID": folder_id
-                    }
-                }
-        else:
-            payload["checkForSecurityUpdatesTaskParameters"] = task["checkForSecurityUpdatesTaskParameters"]
+        payload["checkForSecurityUpdatesTaskParameters"] = get_folder_id(computer_group_id) or task["checkForSecurityUpdatesTaskParameters"]
     elif task["type"] == "scan-for-recommendations" and "scanForRecommendationsTaskParameters" in task:
         computer_group_id = task["scanForRecommendationsTaskParameters"]["computerFilter"].get("computerGroupID")
-        if computer_group_id is not None:
-            c1_cgep=f"https://{DSM_HOSTNAME}:{PORT}/api/computergroups/{computer_group_id}"
-            response = requests.get(c1_cgep, headers=dsm_headers)
-            cgdata = json.loads(response.content)
-            cgname = cgdata['name']
-            c1_scg=f"https://workload.{REGION}.cloudone.trendmicro.com/api/computergroups"
-            response = requests.get(c1_scg, headers=c1_headers)
-            search_data = json.loads(response.content)
-            folder_id = None
-            for group in search_data["computerGroups"]:
-                if group["name"] == cgname:
-                    folder_id = group["ID"]
-                    break
-            if folder_id is not None:
-                payload["scanForRecommendationsTaskParameters"] = {
-                    "computerFilter": {
-                        "type": "computers-in-group",
-                        "computerGroupID": folder_id
-                    }
-                }
-        else:
-            payload["scanForRecommendationsTaskParameters"] = task["scanForRecommendationsTaskParameters"]
+        payload["scanForRecommendationsTaskParameters"] = get_folder_id(computer_group_id) or task["scanForRecommendationsTaskParameters"]
     elif task["type"] == "generate-report" and "generateReportTaskParameters" in task:
-        payload["generateReportTaskParameters"] = task["generateReportTaskParameters"]
+        computer_group_id = task["generateReportTaskParameters"]["computerFilter"].get("computerGroupID")
+        payload["generateReportTaskParameters"] = get_folder_id(computer_group_id) or task["generateReportTaskParameters"]
     elif task["type"] == "scheduled-agent-upgrade" and "scheduledAgentUpgradeTaskParameters" in task:
-        payload["scheduledAgentUpgradeTaskParameters"] = task["scheduledAgentUpgradeTaskParameters"]
-    elif task["type"] == "send-alert-summary" and "sendPolicyTaskParameters" in task:
-        payload["sendPolicyTaskParameters"] = task["sendPolicyTaskParameters"]
+        computer_group_id = task["scheduledAgentUpgradeTaskParameters"]["computerFilter"].get("computerGroupID")
+        payload["scheduledAgentUpgradeTaskParameters"] = get_folder_id(computer_group_id) or task["scheduledAgentUpgradeTaskParameters"]
+    elif task["type"] == "send-alert-summary" and "sendAlertSummaryTaskParameters" in task:
+        computer_group_id = task["sendAlertSummaryTaskParameters"]["computerFilter"].get("computerGroupID")
+        payload["sendAlertSummaryTaskParameters"] = get_folder_id(computer_group_id) or task["sendAlertSummaryTaskParameters"]
     elif task["type"] == "scan-for-integrity-changes" and "scanForIntegrityChangesTaskParameters" in task:
-        payload["scanForIntegrityChangesTaskParameters"] = task["scanForIntegrityChangesTaskParameters"]
+        computer_group_id = task["scanForIntegrityChangesTaskParameters"]["computerFilter"].get("computerGroupID")
+        payload["scanForIntegrityChangesTaskParameters"] = get_folder_id(computer_group_id) or task["scanForIntegrityChangesTaskParameters"]
     if task["type"] == "scan-for-malware" and "scanForMalwareTaskParameters" in task:
         computer_group_id = task["scanForMalwareTaskParameters"]["computerFilter"].get("computerGroupID")
-        #uses the computer "computerGroupID" from the "scanForMalwareTaskParameters" to get the folder name from Deep Securtiy and then it uses the folder name to query the C1 console and retrieve the new group ID then attach that to the payload to assign the scheduled malware scan to the correct folder with the new group ID
-        if computer_group_id is not None:
-            c1_cgep=f"https://{DSM_HOSTNAME}:{PORT}/api/computergroups/{computer_group_id}"
-            response = requests.get(c1_cgep, headers=dsm_headers)
-            cgdata = json.loads(response.content)
-            cgname = cgdata['name']
-            c1_scg=f"https://workload.{REGION}.cloudone.trendmicro.com/api/computergroups"
-            response = requests.get(c1_scg, headers=c1_headers)
-            search_data = json.loads(response.content)
-            folder_id = None
-            for group in search_data["computerGroups"]:
-                if group["name"] == cgname:
-                    folder_id = group["ID"]
-                    break
-            if folder_id is not None:
-                payload["scanForMalwareTaskParameters"] = {
-                    "computerFilter": {
-                        "type": "computers-in-group",
-                        "computerGroupID": folder_id
-                    }
-                }
-        else:
-            payload["scanForMalwareTaskParameters"] = task["scanForMalwareTaskParameters"]
-        
+        payload["scanForMalwareTaskParameters"] = get_folder_id(computer_group_id) or task["scanForMalwareTaskParameters"]
     # Send a POST request to create the task
     response = requests.post(c1, headers=c1_headers, json=payload)
-
 
     if response.status_code == 200:
         print(f"Task {task['name']} successfully created")
