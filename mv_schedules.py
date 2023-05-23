@@ -3,12 +3,12 @@ import json
 from pprint import pprint
 
 #define Deep Security manager hostname with port and API key
-DSM_HOSTNAME = ""
-DSM_API_KEY = ""
+DSM_HOSTNAME = "<YOUR HOSTNAME HERE>"
+DSM_API_KEY = "<YOUR DSM API KEY HERE>"
 
 #define Cloud One Workload Security region
-REGION = ""
-C1_API_KEY = ""
+REGION = "<YOUR WORKLOAD REGION HERE>"
+C1_API_KEY = "<YOUR C1 API KEY HERE>"
 
 def get_folder_id(computer_group_id):
     if computer_group_id is not None:
