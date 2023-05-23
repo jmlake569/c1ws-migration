@@ -3,12 +3,12 @@ import json
 from pprint import pprint
 
 #define Deep Security manager hostname with port and API key
-DSM_HOSTNAME = "<DSM-HOSTNAME-HERE>
-DSM_API_KEY = "<YOUR-DSM-KEY-HERE"
+DSM_HOSTNAME = "workload.us-1.cloudone.trendmicro.com"
+DSM_API_KEY = "ApiKey tmc12PUjmSv9DXd0Q9m9xXlJP0uaoT5:3VgAb74ZLX6CmaEN6yqzn5b24ipxobejcFTGtrWKKCZcUD6Pcrghpt9uT9YhUuJkkF"
 
 #define Cloud One Workload Security region
-REGION = "<C1-REGION-HERE>"
-C1_API_KEY = "<C1-API-KEY-HERE>"
+REGION = "trend-us-1"
+C1_API_KEY = "ApiKey tmc12PUjtPPkQuLhvIJCSFiooxVgf1s:7EMUQairAKqcVWkWGMbC4FQ3kc8TcEa4NEwrWMTuVzBqKP2xkdg943jBKXU5Cnawtm"
 
 def get_folder_id(computer_group_id):
     if computer_group_id is not None:
@@ -42,7 +42,7 @@ c1_headers = {"api-version": "v1", "Content-Type": "application/json", "Authoriz
 
 response = requests.get(dsmurl, headers=dsm_headers)
 data = json.loads(response.content)
-
+print(data)
 for task in data["scheduledTasks"]:
     payload = {
         "name": task["name"],
@@ -74,6 +74,9 @@ for task in data["scheduledTasks"]:
     elif task["type"] == "scan-for-integrity-changes" and "scanForIntegrityChangesTaskParameters" in task:
         computer_group_id = task["scanForIntegrityChangesTaskParameters"]["computerFilter"].get("computerGroupID")
         payload["scanForIntegrityChangesTaskParameters"] = get_folder_id(computer_group_id) or task["scanForIntegrityChangesTaskParameters"]
+    elif task["type"] == "send-policy" and "sendPolicyTaskParameters" in task:
+        computer_group_id = task["sendPolicyTaskParameters"]["computerFilter"].get("computerGroupID")
+        payload["sendPolicyTaskParameters"] = get_folder_id(computer_group_id) or task["sendPolicyTaskParameters"]
     if task["type"] == "scan-for-malware" and "scanForMalwareTaskParameters" in task:
         computer_group_id = task["scanForMalwareTaskParameters"]["computerFilter"].get("computerGroupID")
         payload["scanForMalwareTaskParameters"] = get_folder_id(computer_group_id) or task["scanForMalwareTaskParameters"]
